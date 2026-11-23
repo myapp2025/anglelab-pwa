@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0d1b2a">
+  <meta name="description" content="AngleLab – Research Camera PWA. Capture photos with Yaw/Pitch/Roll orientation data, offline.">
+  <title>AngleLab – Research Camera</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" href="./icons/icon-192.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icons/icon-192.svg">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="AngleLab">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <div class="logo">◐</div>
+      <div>
+        <div class="brand-name">AngleLab</div>
+        <div class="brand-sub">Research Camera · PWA</div>
+      </div>
+    </div>
+    <div class="session-pill" title="Current session">
+      <span class="dot"></span>
+      <span id="currentSessionName">—</span>
+    </div>
+  </header>
+
+  <main>
+    <!-- Camera -->
+    <section class="screen active" data-screen="camera">
+      <div class="camera-wrap">
+        <video id="cameraVideo" playsinline muted autoplay></video>
+        <div id="cameraPlaceholder" class="camera-placeholder">
+          <p>Camera preview will appear here.</p>
+          <button id="startCameraBtn" class="btn primary big">Start Camera</button>
+        </div>
+        <div class="hud">
+          <div class="hud-row">
+            <div class="hud-item"><span class="hud-label">Yaw (α)</span><span class="hud-value" id="hudYaw">—</span></div>
+            <div class="hud-item"><span class="hud-label">Pitch (β)</span><span class="hud-value" id="hudPitch">—</span></div>
+            <div class="hud-item"><span class="hud-label">Roll (γ)</span><span class="hud-value" id="hudRoll">—</span></div>
+          </div>
+          <div class="hud-row rel">
+            <div class="hud-item"><span class="hud-label">Rel Yaw</span><span class="hud-value small" id="hudRelYaw">—</span></div>
+            <div class="hud-item"><span class="hud-label">Rel Pitch</span><span class="hud-value small" id="hudRelPitch">—</span></div>
+            <div class="hud-item"><span class="hud-label">Rel Roll</span><span class="hud-value small" id="hudRelRoll">—</span></div>
+          </div>
+          <div class="hud-source" id="hudSource">—</div>
+        </div>
+      </div>
+
+      <div class="sensor-bar">
+        <button id="startSensorsBtn" class="btn">Enable Sensors</button>
+        <button id="setReferenceBtn" class="btn">Set Reference</button>
+        <button id="clearReferenceBtn" class="btn ghost">Clear Ref</button>
+        <span id="sensorStatus" class="sensor-status" data-kind="info">Sensors not started</span>
+      </div>
+
+      <div class="capture-bar">
+        <button id="switchCamBtn" class="btn icon" title="Switch camera">⟳</button>
+        <button id="captureBtn" class="capture-btn" aria-label="Capture photo"><span></span></button>
+        <label class="toggle-wrap" title="Auto-annotate captured photos">
+          <input type="checkbox" id="autoAnnotateToggle" checked>
+          <span>Annotate</span>
+        </label>
+      </div>
+      <p class="hint">Photos are stored locally in IndexedDB. Tap "Save to Device" in the preview to export to your phone gallery.</p>
+    </section>
+
+    <!-- Sessions -->
+    <section class="screen" data-screen="sessions">
+      <div class="screen-head">
+        <h2>Research Sessions</h2>
+        <button id="newSessionBtn" class="btn primary">+ New</button>
+      </div>
+      <div id="sessionsList" class="list"></div>
+    </section>
+
+    <!-- Gallery -->
+    <section class="screen" data-screen="gallery">
+      <div class="screen-head">
+        <h2>Photo Gallery</h2>
+        <div class="muted">Current session</div>
+      </div>
+      <div id="galleryGrid" class="gallery-grid"></div>
+    </section>
+
+    <!-- Export -->
+    <section class="screen" data-screen="export">
+      <div class="screen-head"><h2>Export Research Data</h2></div>
+      <p class="muted">Exports include the current session. Everything is generated locally — nothing is uploaded.</p>
+      <div class="export-grid">
+        <button id="exportJsonBtn" class="export-card">
+          <div class="export-icon">JSON</div>
+          <div class="export-title">Metadata (JSON)</div>
+          <div class="export-sub">Full schema + quaternion</div>
+        </button>
+        <button id="exportCsvBtn" class="export-card">
+          <div class="export-icon">CSV</div>
+          <div class="export-title">Spreadsheet (CSV)</div>
+          <div class="export-sub">One row per photo</div>
+        </button>
+        <button id="exportZipBtn" class="export-card">
+          <div class="export-icon">ZIP</div>
+          <div class="export-title">Bundle (ZIP)</div>
+          <div class="export-sub">Photos + JSON + CSV</div>
+        </button>
+      </div>
+    </section>
+
+    <!-- Diagnostics -->
+    <section class="screen" data-screen="diagnostics">
+      <div class="screen-head"><h2>Sensor Diagnostics</h2></div>
+      <div id="diagContent"></div>
+    </section>
+
+    <!-- Install -->
+    <section class="screen" data-screen="install">
+      <div class="screen-head"><h2>Install AngleLab</h2></div>
+      <div id="installContent"></div>
+    </section>
+  </main>
+
+  <nav class="tabs">
+    <button class="tab active" data-target="camera">Camera</button>
+    <button class="tab" data-target="sessions">Sessions</button>
+    <button class="tab" data-target="gallery">Gallery</button>
+    <button class="tab" data-target="export">Export</button>
+    <button class="tab" data-target="diagnostics">Sensors</button>
+    <button class="tab" data-target="install">Install</button>
+  </nav>
+
+  <div id="photoSheet" class="sheet">
+    <div class="sheet-content">
+      <img id="photoSheetImg" alt="Captured photo">
+      <div class="sheet-actions">
+        <button id="saveToGalleryBtn" class="btn primary big">Save to Device</button>
+        <button id="saveAnnotatedBtn" class="btn big">Save Annotated</button>
+        <button id="closePhotoSheet" class="btn ghost">Close</button>
+      </div>
+      <p class="hint small">iPhone: choose "Save Image" in the share sheet. Android: the photo is downloaded to your Gallery/Downloads.</p>
+    </div>
+  </div>
+
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
